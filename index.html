@@ -2,149 +2,321 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>To-Do List</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Enhanced To‑Do List</title>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f4f4;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
+    :root{
+      --bg:#f7f9fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280; --primary:#10b981; --danger:#ef4444; --accent:#3b82f6; --warning:#f59e0b;
+      --shadow:0 10px 25px rgba(0,0,0,.08); --radius:16px;
     }
-    .container {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 500px;
+    .dark{
+      --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#9ca3af; --primary:#22c55e; --danger:#f87171; --accent:#60a5fa; --warning:#fbbf24;
+      --shadow:0 10px 25px rgba(0,0,0,.35);
     }
-    h1 {
-      text-align: center;
-      margin-bottom: 1.5rem;
-      color: #333;
-    }
-    .input-section {
-      display: flex;
-      gap: 0.5rem;
-    }
-    .input-section input {
-      flex: 1;
-      padding: 0.5rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    .input-section button {
-      padding: 0.5rem 1rem;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-      margin-top: 1rem;
-    }
-    li {
-      background: #f9f9f9;
-      margin-bottom: 0.5rem;
-      padding: 0.5rem;
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    li.completed {
-      text-decoration: line-through;
-      color: #888;
-    }
-    .delete-btn {
-      background: crimson;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 0.25rem 0.5rem;
-      cursor: pointer;
-    }
-    .profile {
-      margin-top: 1.5rem;
-      background-color: #e0f7fa;
-      padding: 1rem;
-      border-radius: 8px;
-      text-align: center;
-    }
-    .badge {
-      font-size: 1.2rem;
-      color: #ff9800;
-      font-weight: bold;
-    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial; background:var(--bg); color:var(--text);} 
+    .wrap{max-width:880px; margin:32px auto; padding:0 16px}
+    .header{display:flex; align-items:center; gap:12px; justify-content:space-between;}
+    h1{font-size:40px; margin:4px 0 18px; letter-spacing:.5px}
+    .row{display:flex; gap:12px; flex-wrap:wrap}
+    .card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px}
+    input, select, button{border-radius:12px; border:1px solid transparent; padding:12px 14px; font-size:16px;}
+    input, select{background:#f3f4f6; color:var(--text)}
+    input::placeholder{color:var(--muted)}
+    button{cursor:pointer; color:white; background:var(--primary); box-shadow:var(--shadow);}
+    button.secondary{background:var(--accent)}
+    button.ghost{background:transparent; color:var(--text); border:1px solid #374151}
+    .danger{background:var(--danger)}
+    .list{margin-top:14px; display:flex; flex-direction:column; gap:10px}
+    .item{display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:12px; background:var(--card); border:1px solid #e5e7eb22; padding:12px 14px; border-radius:14px; box-shadow:var(--shadow)}
+    .item.dragging{opacity:.6; outline:2px dashed var(--accent)}
+    .title{font-weight:600;}
+    .muted{color:var(--muted); font-size:13px}
+    .strike{text-decoration:line-through; opacity:.6}
+    .chip{display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px; background:#e5e7eb22; border:1px solid #e5e7eb33}
+    .due.overdue{color:#fff; background:var(--danger)}
+    .due.today{color:#111; background:var(--warning)}
+    .due.future{background:#e5e7eb22}
+    .actions{display:flex; gap:8px}
+    .footer{margin-top:12px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between}
+    .progress{height:10px; background:#e5e7eb33; border-radius:999px; overflow:hidden}
+    .bar{height:100%; background:var(--accent); width:0%}
+    .statbox{display:flex; gap:16px; align-items:center}
+    .stat{background:var(--card); padding:12px 16px; border-radius:12px; box-shadow:var(--shadow)}
+    .hint{font-size:12px; color:var(--muted)}
+    .filters{display:flex; gap:8px; flex-wrap:wrap}
+    .badge{display:inline-flex; align-items:center; gap:6px}
+    .toggle{display:inline-flex; gap:8px; align-items:center}
+    .sr-only{position:absolute; left:-10000px}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>My To-Do List</h1>
-    <div class="input-section">
-      <input type="text" id="task-input" placeholder="Add a new task..." />
-      <button onclick="addTask()">Add</button>
+  <div class="wrap">
+    <div class="header">
+      <h1>My To‑Do List</h1>
+      <label class="toggle" title="Dark Mode">
+        <input id="darkToggle" type="checkbox" />
+        <span>🌙 Dark mode</span>
+      </label>
     </div>
-    <ul id="task-list"></ul>
-    <div class="profile">
-      <p><strong>Points:</strong> <span id="points">0</span></p>
-      <p><strong>Milestone:</strong> <span class="badge" id="badge">None</span></p>
+
+    <div class="card">
+      <div class="row">
+        <input id="taskInput" placeholder="Add a new task…" style="flex:1; min-width:220px" />
+        <select id="catInput">
+          <option value="General">General</option>
+          <option value="Study">Study</option>
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+        </select>
+        <input id="dateInput" type="date" />
+        <button id="addBtn">Add</button>
+      </div>
+
+      <div class="footer">
+        <div class="filters">
+          <input id="search" placeholder="Search…" />
+          <select id="statusFilter">
+            <option value="all">All</option>
+            <option value="active">Active</option>
+            <option value="done">Completed</option>
+            <option value="overdue">Overdue</option>
+            <option value="today">Due Today</option>
+          </select>
+          <select id="catFilter">
+            <option value="all">All Categories</option>
+            <option>General</option>
+            <option>Study</option>
+            <option>Work</option>
+            <option>Personal</option>
+          </select>
+          <button class="ghost" id="clearAll">Clear All</button>
+        </div>
+        <div class="statbox">
+          <div class="stat"><b id="points">Points: 0</b><div class="hint">10 pts per completion</div></div>
+          <div class="stat"><b id="milestone">Milestone: 🥉 Bronze Starter</b><div class="hint">Next tier auto‑unlocks</div></div>
+          <div class="stat"><b id="streak">🔥 Streak: 0 days</b><div class="hint">Complete at least one task daily</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px">
+        <div style="flex:1">
+          <div class="progress"><div id="progressBar" class="bar"></div></div>
+          <div class="hint" id="progressText" style="margin-top:6px">0 of 0 completed</div>
+        </div>
+        <button class="secondary" id="addSample">+ Quick sample tasks</button>
+      </div>
+      <div id="list" class="list" aria-live="polite"></div>
     </div>
   </div>
 
+  <template id="itemTpl">
+    <div class="item" draggable="true">
+      <input type="checkbox" class="chk" aria-label="Toggle complete" />
+      <div>
+        <div class="title txt" contenteditable="false"></div>
+        <div class="muted meta">
+          <span class="chip due"></span>
+          <span class="chip cat"></span>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="secondary edit" title="Edit">✏️</button>
+        <button class="danger del" title="Delete">✖</button>
+      </div>
+      <span class="sr-only id"></span>
+    </div>
+  </template>
+
   <script>
-    let points = 0;
-    let daysStreak = 0;
-
-    function addTask() {
-      const input = document.getElementById('task-input');
-      const taskText = input.value.trim();
-      if (taskText === '') return;
-
-      alert(`Task "${taskText}" added successfully!`);
-
-      const li = document.createElement('li');
-      li.textContent = taskText;
-      li.onclick = () => {
-        if (!li.classList.contains('completed')) {
-          li.classList.add('completed');
-          points += 10;
-          daysStreak++;
-          updateProfile();
-        }
+  // --- Data layer -----------------------------------------------------------
+  const store = {
+    key: 'todo.enhanced.v1',
+    load(){
+      const data = JSON.parse(localStorage.getItem(this.key)||'{}');
+      return {
+        tasks: data.tasks||[],
+        dates: data.dates||[], // dates when at least one completion happened
+        dark: data.dark||false,
       };
+    },
+    save(state){ localStorage.setItem(this.key, JSON.stringify(state)); }
+  };
 
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = 'X';
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.onclick = (e) => {
-        e.stopPropagation();
-        li.remove();
-      };
+  let state = store.load();
+  document.getElementById('darkToggle').checked = !!state.dark;
+  document.body.classList.toggle('dark', !!state.dark);
 
-      li.appendChild(deleteBtn);
-      document.getElementById('task-list').appendChild(li);
-      input.value = '';
+  const listEl = document.getElementById('list');
+  const tpl = document.getElementById('itemTpl');
+
+  function uid(){ return Math.random().toString(36).slice(2,9); }
+  function todayStr(d=new Date()){ return d.toISOString().slice(0,10); }
+  function isOverdue(d){ if(!d) return false; const x=new Date(d); x.setHours(23,59,59,999); return !isNaN(x) && x < new Date() && todayStr(x)!==todayStr(); }
+  function isToday(d){ if(!d) return false; return todayStr(new Date(d))===todayStr(); }
+
+  // --- Render --------------------------------------------------------------
+  function render(){
+    // filters
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    const fStatus = document.getElementById('statusFilter').value;
+    const fCat = document.getElementById('catFilter').value;
+
+    listEl.innerHTML='';
+    [...state.tasks].sort((a,b)=> (a.order??0) - (b.order??0)).forEach(t=>{
+      // filtering
+      if(q && !t.text.toLowerCase().includes(q)) return;
+      if(fCat!=='all' && t.category!==fCat) return;
+      if(fStatus==='active' && t.completed) return;
+      if(fStatus==='done' && !t.completed) return;
+      if(fStatus==='overdue' && !isOverdue(t.due)) return;
+      if(fStatus==='today' && !isToday(t.due)) return;
+
+      const node = tpl.content.firstElementChild.cloneNode(true);
+      node.querySelector('.id').textContent = t.id;
+      const chk = node.querySelector('.chk');
+      const txt = node.querySelector('.txt');
+      const due = node.querySelector('.due');
+      const cat = node.querySelector('.cat');
+
+      chk.checked = !!t.completed;
+      txt.textContent = t.text;
+      txt.classList.toggle('strike', !!t.completed);
+
+      // due chip
+      if(t.due){
+        if(isOverdue(t.due)) { due.textContent = 'Overdue · '+t.due; due.className='chip due overdue'; }
+        else if(isToday(t.due)) { due.textContent = 'Today'; due.className='chip due today'; }
+        else { due.textContent = t.due; due.className='chip due future'; }
+      } else { due.textContent='No due'; due.className='chip due'; }
+
+      // cat chip
+      cat.textContent = t.category || 'General';
+
+      // actions
+      node.querySelector('.del').onclick = ()=> removeTask(t.id);
+      node.querySelector('.edit').onclick = ()=> editTask(t.id, txt);
+      chk.onchange = (e)=> toggleComplete(t.id, e.target.checked);
+
+      // drag
+      node.addEventListener('dragstart', (ev)=>{ node.classList.add('dragging'); ev.dataTransfer.setData('text/plain', t.id); });
+      node.addEventListener('dragend', ()=> node.classList.remove('dragging'));
+
+      listEl.appendChild(node);
+    });
+
+    // progress + stats
+    const total = state.tasks.length;
+    const done = state.tasks.filter(t=>t.completed).length;
+    const pct = total? Math.round(done/total*100) : 0;
+    document.getElementById('progressBar').style.width = pct+'%';
+    document.getElementById('progressText').textContent = `${done} of ${total} completed`;
+
+    const points = done*10;
+    document.getElementById('points').textContent = `Points: ${points}`;
+    document.getElementById('milestone').textContent = `Milestone: ${milestone(points)}`;
+    document.getElementById('streak').textContent = `🔥 Streak: ${computeStreak()} days`;
+
+    store.save(state);
+  }
+
+  function milestone(points){
+    if(points>=600) return '🏆 Platinum Pro';
+    if(points>=300) return '🥇 Gold Achiever';
+    if(points>=150) return '🥈 Silver Mover';
+    return '🥉 Bronze Starter';
+  }
+
+  function computeStreak(){
+    // Count consecutive days ending today present in state.dates (unique YYYY-MM-DD strings)
+    const set = new Set(state.dates||[]);
+    let d = new Date();
+    let s=0;
+    for(;;){
+      const key = todayStr(d);
+      if(set.has(key)) { s++; d.setDate(d.getDate()-1); }
+      else break;
     }
+    return s;
+  }
 
-    function updateProfile() {
-      document.getElementById('points').textContent = points;
+  // --- Mutations -----------------------------------------------------------
+  function addTask(){
+    const text = document.getElementById('taskInput').value.trim();
+    const category = document.getElementById('catInput').value;
+    const due = document.getElementById('dateInput').value || '';
+    if(!text) return;
+    const maxOrder = state.tasks.reduce((m,t)=> Math.max(m, t.order??0), 0);
+    state.tasks.push({ id:uid(), text, category, due, completed:false, createdAt:Date.now(), order:maxOrder+1 });
+    document.getElementById('taskInput').value='';
+    render();
+  }
 
-      let badge = 'None';
-      if (daysStreak >= 100) badge = '🏆 Gold Achiever';
-      else if (daysStreak >= 50) badge = '🥈 Silver Performer';
-      else if (daysStreak >= 10) badge = '🥉 Bronze Starter';
-
-      document.getElementById('badge').textContent = badge;
+  function removeTask(id){ state.tasks = state.tasks.filter(t=>t.id!==id); render(); }
+  function toggleComplete(id, val){
+    const t = state.tasks.find(x=>x.id===id); if(!t) return; t.completed=!!val; 
+    if(val){ // mark completion date
+      const d = todayStr(); if(!state.dates.includes(d)) state.dates.push(d);
     }
+    render();
+  }
+  function editTask(id, txtEl){
+    const t = state.tasks.find(x=>x.id===id); if(!t) return;
+    const newText = prompt('Edit task text:', t.text);
+    if(newText!==null){ t.text = newText.trim()||t.text; }
+    const newDue = prompt('Edit due date (YYYY-MM-DD) or leave blank:', t.due||'');
+    if(newDue!==null){ t.due = newDue.trim(); }
+    const newCat = prompt('Edit category:', t.category||'General');
+    if(newCat!==null){ t.category = newCat.trim()||'General'; }
+    render();
+  }
+
+  // Drag & drop ordering
+  listEl.addEventListener('dragover', (e)=>{
+    e.preventDefault();
+    const dragging = document.querySelector('.item.dragging');
+    const after = getDragAfterElement(listEl, e.clientY);
+    if(after==null) listEl.appendChild(dragging); else listEl.insertBefore(dragging, after);
+  });
+  listEl.addEventListener('drop', ()=>{
+    // recompute order from DOM
+    [...listEl.querySelectorAll('.item')].forEach((node, idx)=>{
+      const id = node.querySelector('.id').textContent; const t = state.tasks.find(x=>x.id===id); if(t) t.order = idx+1;
+    });
+    render();
+  });
+  function getDragAfterElement(container, y){
+    const els = [...container.querySelectorAll('.item:not(.dragging)')];
+    return els.reduce((closest, child)=>{
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height/2;
+      if(offset<0 && offset>closest.offset){ return {offset, element:child}; } else { return closest; }
+    }, {offset: Number.NEGATIVE_INFINITY}).element;
+  }
+
+  // --- Events --------------------------------------------------------------
+  document.getElementById('addBtn').onclick = addTask;
+  document.getElementById('taskInput').addEventListener('keydown', e=>{ if(e.key==='Enter') addTask(); });
+  ['search','statusFilter','catFilter'].forEach(id=> document.getElementById(id).addEventListener('input', render));
+  document.getElementById('clearAll').onclick = ()=>{ if(confirm('Clear all tasks?')){ state.tasks=[]; render(); } };
+  document.getElementById('darkToggle').onchange = (e)=>{ state.dark = e.target.checked; document.body.classList.toggle('dark', state.dark); store.save(state); };
+  document.getElementById('addSample').onclick = ()=>{
+    if(state.tasks.length) return alert('Samples can be added only to an empty list.');
+    const samples = [
+      ['MSE Preparation','Study', todayStr()],
+      ['Finish JS assignment','Study', todayStr(new Date(Date.now()+86400000))],
+      ['Gym session','Personal',''],
+      ['Fix portfolio bugs','Work',''],
+      ['Call mom','Personal', todayStr()],
+    ];
+    samples.forEach(([text,cat,due],i)=> state.tasks.push({id:uid(), text, category:cat, due, completed:false, createdAt:Date.now(), order:i+1}));
+    render();
+  };
+
+  // initial render
+  render();
   </script>
 </body>
 </html>
